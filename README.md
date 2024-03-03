@@ -6,7 +6,7 @@ Config is a Go package for loading configuration values from AWS SSM Parameter S
 To install Config, use go get:
 
 ```
-go get github.com/ddouglas/config
+go get github.com/ddouglas/config-ssm
 ```
 
 ## Usage 
@@ -15,7 +15,7 @@ go get github.com/ddouglas/config
 To use Config, first import it:
 
 ```
-import "github.com/ddouglas/config"
+import "github.com/ddouglas/config-ssm"
 ```
 
 Then, define a struct to hold your configuration values. The struct fields must be tagged with ssm or env to indicate the source of the value. For example:
@@ -74,7 +74,7 @@ import (
     "fmt"
     "log"
 
-    "github.com/ddouglas/config"
+    "github.com/ddouglas/config-ssm"
 )
 
 type Config struct {
