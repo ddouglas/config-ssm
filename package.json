@@ -1,0 +1,29 @@
+{
+  "name": "config-ssm",
+  "version": "1.0.0",
+  "description": "Config is a Go package for loading configuration values from AWS SSM Parameter Store and environment variables into a struct.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^11.1.0",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^10.0.2",
+    "@semantic-release/release-notes-generator": "^12.1.0"
+  },
+  "release": {
+    "branches": [
+      "main"
+    ],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/git",
+      "@semantic-release/github"
+    ]
+  }
+}
