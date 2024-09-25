@@ -111,7 +111,6 @@ func Load(ctx context.Context, out any, optFuncs ...LoadOptFunc) error {
 
 	if len(ssmPathNames) > 0 {
 
-		fmt.Println(ssmPathNames)
 		result, err := opts.client.GetParameters(ctx, &ssm.GetParametersInput{
 			Names:          ssmPathNames,
 			WithDecryption: aws.Bool(true),
