@@ -16,6 +16,8 @@ type Config struct {
 	APIKey      string       `ssm:"/api_key,required"`
 	Debug       bool         `ssm:"/debug"`
 	Nested      NestedStruct `ssm:"/nested"`
+
+	PathFromEnv string `ssmPathEnv:"CONFIG_PATH,required"`
 }
 
 type ConfigEnv struct {
@@ -26,10 +28,11 @@ type ConfigEnv struct {
 
 func TestLoad(t *testing.T) {
 	// Set up a mock SSM client
-	client := newMockSSMClient("/myapp")
+	newMockEnv()
+
+	client := newMockSSMClient("")
 	// Set up the LoadOpts
 	opts := []LoadOptFunc{
-		WithPrefix("/myapp"),
 		WithSSMClient(client),
 	}
 
@@ -49,6 +52,7 @@ func TestLoad(t *testing.T) {
 			SubField: "sub_field_value",
 			Ignored:  "",
 		},
+		PathFromEnv: "custom_path_value",
 	}
 	if !reflect.DeepEqual(cfg, expected) {
 		t.Errorf("Config was not loaded correctly. Expected: %#v, got: %#v", expected, cfg)
@@ -76,7 +80,7 @@ func TestLoadEnv(t *testing.T) {
 		t.Errorf("Config was not loaded correctly. Expected: %#v, got: %#v", expected, cfg)
 	}
 }
-func TestGetSSMRecusriveTags(t *testing.T) {
+func TestGetSSMRecursiveTags(t *testing.T) {
 
 	input := Config{}
 
@@ -129,7 +133,7 @@ func TestGetSSMRecusriveTags(t *testing.T) {
 	}
 }
 
-func TestGetEnvRecusriveTags(t *testing.T) {
+func TestGetEnvRecursiveTags(t *testing.T) {
 
 	input := Config{}
 

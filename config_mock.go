@@ -2,8 +2,8 @@ package config
 
 import (
 	"context"
-	"fmt"
 	"os"
+	"path"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -22,13 +22,15 @@ var sharedParams = map[string]string{
 	"api_key":          "my-secret-key",
 	"debug":            "true",
 	"nested/sub_field": "sub_field_value",
+	"custom/path":      "custom_path_value",
+	"config_path":      "/custom/path",
 }
 
 func newMockSSMClient(prefix string) *mockSSMClient {
 
 	params := make(map[string]string, len(sharedParams))
 	for k, v := range sharedParams {
-		params[fmt.Sprintf("%s/%s", prefix, k)] = v
+		params[path.Join(prefix, k)] = v
 	}
 
 	return &mockSSMClient{

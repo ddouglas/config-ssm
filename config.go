@@ -81,14 +81,21 @@ func Load(ctx context.Context, out any, optFuncs ...LoadOptFunc) error {
 	names := getSSMRecursiveTags(outValue, opts.prefix)
 	names = append(names, getEnvRecursiveTags(outValue)...)
 
+	ssmPathEnvName := getSSMPathEnvRecursiveTags(outValue)
+
+	names = append(names, ssmPathEnvName...)
+
 	envPathName := make([]string, 0, len(names))
 	ssmPathNames := make([]string, 0, len(names))
+	ssmPathEnvNames := make([]string, 0, len(names))
 	for _, nc := range names {
 		switch nc.provider {
 		case "env":
 			envPathName = append(envPathName, nc.name)
 		case "ssm":
 			ssmPathNames = append(ssmPathNames, nc.name)
+		case "ssmPathEnv":
+			ssmPathEnvNames = append(ssmPathEnvNames, nc.name)
 		default:
 			return fmt.Errorf("unhandled provider %s: %s", nc.provider, nc.name)
 		}
@@ -122,6 +129,61 @@ func Load(ctx context.Context, out any, optFuncs ...LoadOptFunc) error {
 		for _, parameter := range result.Parameters {
 			resultMap[aws.ToString(parameter.Name)] = aws.ToString(parameter.Value)
 		}
+
+	}
+
+	if len(ssmPathEnvNames) > 0 {
+
+		// First, get the parameter names from the environment variables and create a map of env var name to parameter name
+		paramNames := make([]string, 0, len(ssmPathEnvNames))
+		/*
+		   paramNameMap := map[string]string{
+		 	"CONFIG_PATH": "/custom/path",
+		   }
+		*/
+		paramNameMap := make(map[string]string)
+		for _, name := range ssmPathEnvNames {
+			if val := os.Getenv(name); val != "" {
+				paramNames = append(paramNames, val)
+				paramNameMap[name] = val
+			} else {
+				return fmt.Errorf("environment variable %s is required for ssmPathEnv provider but was not set", name)
+			}
+		}
+
+		// Now, fetch the parameters from SSM
+		result, err := opts.client.GetParameters(ctx, &ssm.GetParametersInput{
+			Names:          paramNames,
+			WithDecryption: aws.Bool(true),
+		})
+		if err != nil {
+			return fmt.Errorf("failed to fetch parameters for ssmPathEnv: %w", err)
+		}
+
+		/*
+		   paramResultMap := map[string]string{
+		 	"/custom/path": "custom_path_value",
+		   }
+		*/
+		paramResultMap := make(map[string]string)
+
+		// Map the name of the parameter to its value
+		for _, parameter := range result.Parameters {
+			paramResultMap[aws.ToString(parameter.Name)] = aws.ToString(parameter.Value)
+		}
+
+		// Now, map back to the original env variable name to the value from SSM using the paramNameMap
+		for envName, paramName := range paramNameMap {
+			if val, ok := paramResultMap[paramName]; ok {
+				resultMap[envName] = val
+			}
+		}
+
+		/*
+		   resultMap := map[string]string{
+		 	"CONFIG_PATH": "custom_path_value",
+		   }
+		*/
 
 	}
 
@@ -200,6 +262,41 @@ func getSSMRecursiveTags(v reflect.Value, prefix string) []*pathConfig {
 			provider: "ssm",
 			value:    field,
 		})
+	}
+
+	return nameConfigs
+}
+
+func getSSMPathEnvRecursiveTags(v reflect.Value) []*pathConfig {
+
+	t := v.Type()
+	nameConfigs := make([]*pathConfig, 0)
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		fieldT := t.Field(i)
+		tag := fieldT.Tag.Get("ssmPathEnv")
+		if fieldT.Type.Kind() == reflect.Struct {
+			nameConfigs = append(nameConfigs, getSSMPathEnvRecursiveTags(field)...)
+			continue
+		}
+
+		if tag == "" {
+			continue
+		}
+
+		parts := strings.Split(tag, ",")
+		required := false
+		if len(parts) == 2 && parts[1] == "required" {
+			required = true
+		}
+
+		nameConfigs = append(nameConfigs, &pathConfig{
+			name:     parts[0],
+			required: required,
+			provider: "ssmPathEnv",
+			value:    field,
+		})
+
 	}
 
 	return nameConfigs
