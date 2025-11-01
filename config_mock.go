@@ -2,8 +2,8 @@ package config
 
 import (
 	"context"
-	"fmt"
 	"os"
+	"path"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -30,7 +30,7 @@ func newMockSSMClient(prefix string) *mockSSMClient {
 
 	params := make(map[string]string, len(sharedParams))
 	for k, v := range sharedParams {
-		params[fmt.Sprintf("%s/%s", prefix, k)] = v
+		params[path.Join(prefix, k)] = v
 	}
 
 	return &mockSSMClient{
