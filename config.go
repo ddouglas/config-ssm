@@ -134,8 +134,13 @@ func Load(ctx context.Context, out any, optFuncs ...LoadOptFunc) error {
 
 	if len(ssmPathEnvNames) > 0 {
 
-		// first, get the parameter names from env
+		// First, get the parameter names from the environment variables and create a map of env var name to parameter name
 		paramNames := make([]string, 0, len(ssmPathEnvNames))
+		/*
+		   paramNameMap := map[string]string{
+		 	"CONFIG_PATH": "/custom/path",
+		   }
+		*/
 		paramNameMap := make(map[string]string)
 		for _, name := range ssmPathEnvNames {
 			if val := os.Getenv(name); val != "" {
@@ -146,6 +151,7 @@ func Load(ctx context.Context, out any, optFuncs ...LoadOptFunc) error {
 			}
 		}
 
+		// Now, fetch the parameters from SSM
 		result, err := opts.client.GetParameters(ctx, &ssm.GetParametersInput{
 			Names:          paramNames,
 			WithDecryption: aws.Bool(true),
@@ -154,17 +160,30 @@ func Load(ctx context.Context, out any, optFuncs ...LoadOptFunc) error {
 			return fmt.Errorf("failed to fetch parameters for ssmPathEnv: %w", err)
 		}
 
+		/*
+		   paramResultMap := map[string]string{
+		 	"/custom/path": "custom_path_value",
+		   }
+		*/
 		paramResultMap := make(map[string]string)
 
+		// Map the name of the parameter to it's value
 		for _, parameter := range result.Parameters {
 			paramResultMap[aws.ToString(parameter.Name)] = aws.ToString(parameter.Value)
 		}
 
+		// Now, map back to the original env variable name to the value from SSM using the paramNameMap
 		for envName, paramName := range paramNameMap {
 			if val, ok := paramResultMap[paramName]; ok {
 				resultMap[envName] = val
 			}
 		}
+
+		/*
+		   resultMap := map[string]string{
+		 	"CONFIG_PATH": "custom_path_value",
+		   }
+		*/
 
 	}
 
