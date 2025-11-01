@@ -167,7 +167,7 @@ func Load(ctx context.Context, out any, optFuncs ...LoadOptFunc) error {
 		*/
 		paramResultMap := make(map[string]string)
 
-		// Map the name of the parameter to it's value
+		// Map the name of the parameter to its value
 		for _, parameter := range result.Parameters {
 			paramResultMap[aws.ToString(parameter.Name)] = aws.ToString(parameter.Value)
 		}
