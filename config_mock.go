@@ -22,6 +22,8 @@ var sharedParams = map[string]string{
 	"api_key":          "my-secret-key",
 	"debug":            "true",
 	"nested/sub_field": "sub_field_value",
+	"custom/path":      "custom_path_value",
+	"config_path":      "/custom/path",
 }
 
 func newMockSSMClient(prefix string) *mockSSMClient {
